@@ -38,8 +38,4 @@ public class Event extends Task {
         return by + " " + start + " to " + end;
     }
 
-    @Override
-    public String toShow() {
-        return "Start: " + start + "\nEnd: " + end + "\n";// + super.toShow();
-    }
 }
