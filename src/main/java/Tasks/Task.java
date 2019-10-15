@@ -1,11 +1,14 @@
 package Tasks;
+
 /**
  * Represents a task in the Duke program.
  */
 public class Task {
     private final String description;
-    public boolean isDone;
     private String modCode;
+    private boolean isDone;
+    private boolean isReminder;
+    private String remindTime;
 
     /**
      * Creates Task object.
@@ -15,6 +18,8 @@ public class Task {
         this.description = description;
         this.isDone = false;
         this.modCode ="";
+        this.isReminder = false;
+        this.remindTime = "";
     }
 
     public String getType() {
@@ -27,6 +32,10 @@ public class Task {
      */
     public String getStatusIcon() {
         return (isDone ? "\u2713" : "\u2718");
+    }
+
+    private String getReminderStatus() {
+        return (isReminder ? "[HR]" : "[NR]");
     }
 
     public void setDone(boolean done) {
@@ -44,9 +53,16 @@ public class Task {
         return taskDescription;
     }
 
+    public String remindTimeToString() {
+        return "[<R" + remindTime + "/R>]";
+    }
     public String toString() {
-        return "[" + getStatusIcon()
-                + "] " + getDescription();
+        if (isReminder) {
+            return "[" + getStatusIcon()
+                    + "] " + getReminderStatus()  + remindTimeToString() + getDescription();
+        } else {
+            return "[" + getStatusIcon() + "] " + getReminderStatus()  + remindTimeToString() + getDescription();
+        }
     }
 
     public String getDateTime(){
@@ -54,11 +70,27 @@ public class Task {
     }
 
     public String getModCode() {
-        String[] split = description.split(" ");
+        String[] split = description.trim().split(" ");
         return split[0];
     }
 
     public String toShow() {
         return modCode + "\n" + description;
+    }
+
+    public void setRemindTime(String time) {
+        remindTime = time;
+    }
+
+    public String getRemindTime() {
+        return this.remindTime;
+    }
+
+    public void setReminder(boolean reminder) {
+        this.isReminder = reminder;
+    }
+
+    public boolean getReminder() {
+        return this.isReminder;
     }
 }
