@@ -5,7 +5,6 @@ package Tasks;
  */
 public class Task {
     private final String description;
-    private String modCode;
     private boolean isDone;
     private boolean isReminder;
     private String remindTime;
@@ -17,7 +16,6 @@ public class Task {
     public Task(String description) {
         this.description = description;
         this.isDone = false;
-        this.modCode ="";
         this.isReminder = false;
         this.remindTime = "";
     }
@@ -30,7 +28,7 @@ public class Task {
      * Checks whether the task is completed.
      * @return This returns a tick or cross depending on the boolean value of isDone
      */
-    public String getStatusIcon() {
+    private String getStatusIcon() {
         return (isDone ? "\u2713" : "\u2718");
     }
 
@@ -72,10 +70,6 @@ public class Task {
     public String getModCode() {
         String[] split = description.trim().split(" ");
         return split[0];
-    }
-
-    public String toShow() {
-        return modCode + "\n" + description;
     }
 
     public void setRemindTime(String time) {
