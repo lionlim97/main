@@ -4,6 +4,7 @@ import Interface.Storage;
 import Interface.Ui;
 import JavaFx.AlertBox;
 import Tasks.TaskList;
+import Tasks.Todo;
 import javafx.scene.control.Alert;
 
 /**
@@ -44,6 +45,7 @@ public class DoWithinPeriodTasksCommand extends Command {
         if (isValid) {
             AlertBox.display("Reminder Alert", "You have a task to do within a period.",
                     taskDescription + " (from " + startDate + " to " + endDate + ")", Alert.AlertType.INFORMATION);
+            //todos.addTask(new Todo(taskDescription + "(from " + startDate + " to " + endDate + ")")); remove this after done
         }
 
         return ui.showReminder(taskDescription, startDate, endDate, isValid);

@@ -1,5 +1,6 @@
 package JavaFx;
 import Interface.*;
+import Tasks.Deadline;
 import Tasks.Task;
 import Tasks.TaskList;
 import javafx.animation.Animation;
@@ -9,27 +10,27 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
+import javafx.stage.Stage;
+import javafx.util.Callback;
 import javafx.util.Duration;
-import javafx.util.Pair;
 
 import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -89,8 +90,8 @@ public class MainWindow extends BorderPane implements Initializable {
             e.printStackTrace();
         }
     }
+    //private Map<String, String> lookupTable = LookupTable.getLookupTable();
 
-    int number_of_modules;
     /**
      * This method initializes the display in the window of the GUI.
      */
@@ -115,33 +116,11 @@ public class MainWindow extends BorderPane implements Initializable {
             overdueTable.setItems(setOverdueTable());
 
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/ProgressIndicator.fxml"));
-            fxmlLoader.load();
-            Pair<HashMap<String, String>, ArrayList<Pair<String, Pair<String, String>>>> result= fxmlLoader.<ProgressController>getController().getProgressIndicatorMap(eventsList.getMap(), deadlinesList.getMap());
-            number_of_modules = result.getKey().keySet().size();
-            //System.out.println("Number of times: " + (String.valueOf(number_of_modules)));
-
-            HashMap<String, String> modules = result.getKey();
-            int totalNumTasks = 0;
-            int completedValue = 0;
-            for (String module : modules.keySet()) {
-                ArrayList<Pair<String, Pair<String, String>>> tasks = result.getValue();
-                //totalNumTasks = tasks.size();
-                for (Pair<String, Pair<String, String>> as : tasks) {
-                    if (as.getKey().equals(module)) {
-                        totalNumTasks += 1;
-                        if (as.getValue().getKey().equals("\u2713")) {
-                            completedValue += 1;
-                        }
-                    }
-                }
-                FXMLLoader fxmlLoad = new FXMLLoader(getClass().getResource("/view/ProgressIndicator.fxml"));
-                Parent loads = fxmlLoad.load();
-                fxmlLoad.<ProgressController>getController().getData(module, totalNumTasks, completedValue);
-                progressContainer.getChildren().add(loads);
-            }
-
-            setListView();
-        } catch (IOException | NullPointerException | ParseException e) {
+            Parent loader = fxmlLoader.load();
+            fxmlLoader.<ProgressController>getController().getData("CS2100", "5", "6");
+            progressContainer.getChildren().add(loader);
+            setListItem();
+        } catch (ParseException | IOException | NullPointerException e) {
             e.printStackTrace();
         }
     }
@@ -219,7 +198,7 @@ public class MainWindow extends BorderPane implements Initializable {
         return overdueViews;
     }
 
-    private void openReminderBox() {
+     private void openReminderBox() {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
         Date date = new Date();
         for (int i = 0; i < todos.size(); i++) {
@@ -252,27 +231,16 @@ public class MainWindow extends BorderPane implements Initializable {
         String response = duke.getResponse(input);
         if (input.startsWith("Week")) {
             setWeek(false, input);
-            setListView();
+            setListItem();
         } else if (input.startsWith("add")) {
-            if(response.startsWith("true|"))
             refresh(input);
-        } else if (input.startsWith("delete/e" ) || input.startsWith("done/e")) {
-            String[] split = input.split("/at");
-            String[] dateAndTime = split[1].split("from");
-            String date = dateAndTime[0].trim();
-            if (date.startsWith("Week")) {
-                String[] dateSplit = date.split(" ");
-                date = dateSplit[0] + " " + dateSplit[1];
-            } else {
-                date = LT.getWeek(date);
-            }
-            if (date.equals(week)) setWeek(false, week);
 
-        }else if (userInput.getText().equals("bye")) {
+        } else if (userInput.getText().equals("bye")) {
             PauseTransition delay = new PauseTransition(Duration.seconds(1));
             delay.setOnFinished( event -> Platform.exit() );
             delay.play();
         }
+        AlertBox.display(" ","",response, Alert.AlertType.INFORMATION);
         userInput.clear();
     }
 
@@ -289,14 +257,17 @@ public class MainWindow extends BorderPane implements Initializable {
         return (currentDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
     }
 
-    private String week = NO_FIELD;
-    private final ObservableList<Text> monList = FXCollections.observableArrayList();
-    private final ObservableList<Text> tueList = FXCollections.observableArrayList();
-    private final ObservableList<Text> wedList = FXCollections.observableArrayList();
-    private final ObservableList<Text> thuList = FXCollections.observableArrayList();
-    private final ObservableList<Text> friList = FXCollections.observableArrayList();
-    private final ObservableList<Text> satList = FXCollections.observableArrayList();
-    private final ObservableList<Text> sunList = FXCollections.observableArrayList();
+    //Temp file as Add command and storage not yet implemented. By right go to file find week -> find day
+    private String[] tempList = {"Week 8 Mon FBC", "Week 8 Mon A", "Week 8 Tue EFG", "Week 8 Wed EFG", "Week 8 Thu EFG", "Week 8 Fri EFG", "Week 8 Sat EFG", "Week 8 Sun EFG", "Week 9 Sun HAHAH"};
+    private String week = "Week 9";
+
+    private final ObservableList<String> monList = FXCollections.observableArrayList();
+    private final ObservableList<String> tueList = FXCollections.observableArrayList();
+    private final ObservableList<String> wedList = FXCollections.observableArrayList();
+    private final ObservableList<String> thuList = FXCollections.observableArrayList();
+    private final ObservableList<String> friList = FXCollections.observableArrayList();
+    private final ObservableList<String> satList = FXCollections.observableArrayList();
+    private final ObservableList<String> sunList = FXCollections.observableArrayList();
 
     /**
      * This method clears the data in GridPane ListViews.
@@ -312,102 +283,47 @@ public class MainWindow extends BorderPane implements Initializable {
     }
 
     /**
-     * This method creates a comparator for a 12 hour time to be sorted by timeline.
-     * @param lhs First item compared
-     * @param rhs Second item compared
-     * @return The result of the comparison
-     */
-    private static int compareByTime(Text lhs, Text rhs) {
-        String left = lhs.getText().replaceFirst("Start: ", "");
-        String[] leftSplit = left.split("\n",2);
-        String[] leftTimeSplit = leftSplit[0].split(" ");
-        String right = rhs.getText().replaceFirst("Start: ", "");
-        String[] rightSplit = right.split("\n",2);
-        String[] rightTimeSplit = rightSplit[0].split(" ");
-
-        if(leftTimeSplit[1].equals("AM") && rightTimeSplit[1].equals("AM")){
-            String[]leftTimeSplitHourMinute = leftTimeSplit[0].split(":");
-            String[]rightTimeSplitHourMinute = rightTimeSplit[0].split(":");
-            if(leftTimeSplitHourMinute[0].equals("12") && rightTimeSplitHourMinute[0].equals("12")) {
-                return leftTimeSplitHourMinute[1].compareTo(rightTimeSplitHourMinute[1]);
-            } else if(leftTimeSplitHourMinute[0].equals("12")) {
-                //return left
-                return -1;
-            } else if (rightTimeSplitHourMinute[0].equals("12")) {
-                //return right
-                return 1;
-            } else {
-                return leftTimeSplit[0].compareTo(rightTimeSplit[0]);
-            }
-        } else if (leftTimeSplit[1].equals("AM")) {
-            //return left
-            return -1;
-        } else if (rightTimeSplit[1].equals("AM")) {
-            //return right
-            return 1;
-        } else {
-            //return left
-            return leftSplit[0].compareTo(rightSplit[0]);
-        }
-    }
-
-    /**
      * This method generates data in day GridPane ListViews based on the week selected
      */
-    private void setListView() {
+    private void setListItem(){
         clearData();
-        for(Map.Entry<String, HashMap<String, ArrayList<Task>>> module: eventsList.getMap().entrySet()) {
-            HashMap<String, ArrayList<Task>> moduleValue = module.getValue();
-            for(Map.Entry<String, ArrayList<Task>> item: moduleValue.entrySet()) {
-                String strDate = item.getKey();
-                String[] spilt = strDate.split(" ", 3);
-                String selectedWeek = LT.getWeek(spilt[1]);
-                if((selectedWeek).equals(week)) {
-                    ArrayList<Task> data = item.getValue(); // each item in data has the contents
-                    for(Task task: data){
-                        //boolean isTick = task.isDone;
-                        Text toShow = new Text(task.toShow() + task.getModCode() + "\n" + task.getDescription());
-                        toShow.setFont(Font.font(10));
-                        if (task.isDone){
-                            toShow.setFill(Color.GAINSBORO);
-                            toShow.setStrikethrough(true);
-                        }
-                        toShow.wrappingWidthProperty().bind(monEventView.widthProperty().subtract(20));
-                        String day = spilt[0];
-                        switch (day){
-                            case "Mon":
-                                monList.add(toShow);
-                                break;
-                            case  "Tue":
-                                tueList.add(toShow);
-                                break;
-                            case "Wed":
-                                wedList.add(toShow);
-                                break;
-                            case "Thu":
-                                thuList.add(toShow);
-                                break;
-                            case "Fri":
-                                friList.add(toShow);
-                                break;
-                            case "Sat":
-                                satList.add(toShow);
-                                break;
-                            case "Sun":
-                                sunList.add(toShow);
-                                break;
-                        }
-                    }
+        for(String item: tempList){ //update (tempList) when actually list is implemented
+            if(item.startsWith(week)){
+                item = item.replaceFirst(week, "");
+                item = item.trim();
+                String[] splitItem = item.split(" ", 2);
+                switch (splitItem[0]){
+                    case "Mon":
+                        monList.add(splitItem[1]);
+                        break;
+                    case  "Tue":
+                        tueList.add(splitItem[1]);
+                        break;
+                    case "Wed":
+                        wedList.add(splitItem[1]);
+                        break;
+                    case "Thu":
+                        thuList.add(splitItem[1]);
+                        break;
+                    case "Fri":
+                        friList.add(splitItem[1]);
+                        break;
+                    case "Sat":
+                        satList.add(splitItem[1]);
+                        break;
+                    case "Sun":
+                        sunList.add(splitItem[1]);
+                        break;
                 }
             }
         }
-        monEventView.setItems(monList.sorted(MainWindow::compareByTime));
-        tueEventView.setItems(tueList.sorted(MainWindow::compareByTime));
-        wedEventView.setItems(wedList.sorted(MainWindow::compareByTime));
-        thuEventView.setItems(thuList.sorted(MainWindow::compareByTime));
-        friEventView.setItems(friList.sorted(MainWindow::compareByTime));
-        satEventView.setItems(satList.sorted(MainWindow::compareByTime));
-        sunEventView.setItems(sunList.sorted(MainWindow::compareByTime));
+        monEventView.setItems(monList.sorted());
+        tueEventView.setItems(tueList.sorted());
+        wedEventView.setItems(wedList.sorted());
+        thuEventView.setItems(thuList.sorted());
+        friEventView.setItems(friList.sorted());
+        satEventView.setItems(satList.sorted());
+        sunEventView.setItems(sunList.sorted());
     }
 
     /**
@@ -416,6 +332,7 @@ public class MainWindow extends BorderPane implements Initializable {
      * @param selectedWeek The week selected
      */
     private void setWeek(Boolean onStart,String selectedWeek){
+        //if start up selectedWeek will be NO_FIELD, else if user search for week, week equals selected week
         if(onStart){
             Date dateTime = new Date();
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
@@ -423,10 +340,6 @@ public class MainWindow extends BorderPane implements Initializable {
             selectedWeek = LT.getWeek(date);
             currentWeek.setText(selectedWeek + " ( " + LT.getDates(selectedWeek.toLowerCase()) + " )");
             week = selectedWeek;
-            currentWeek.setFont(Font.font("Verdana", FontWeight.BOLD, FontPosture.ITALIC,23));
-            currentWeek.setTextFill(Color.GOLDENROD);
-            //currentWeek.setUnderline(true);
-            //currentWeek.setDisable(true);
         }
         else{
             currentWeek.setText(selectedWeek + " ( " + LT.getDates(selectedWeek.toLowerCase()) + " )");
@@ -437,67 +350,58 @@ public class MainWindow extends BorderPane implements Initializable {
     /**
      * This method refreshes the GridPane ListView after user Adds an item
      * @param input The user input from Command Line
-     * @throws ParseException The exception when that is error with the date given
+     * @throws ParseException
      */
-    private void refresh(String input) throws ParseException {
+    private void refresh(String input) throws ParseException { // boolean onAdd,boolean onWeek. if onAdd = 1 it's a add command, if onWeek = 1 it's a week command
+        //Assume input to be implement: (Format to be changed)
+        // Week label format: Week 8 ( 07/10/2019 - 11/10/2019 )
+        //deadline format - add-d modulecode description date time
+        //event format - add-e modulecode description date(eg. 07/10/2019) from time to time )
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         DateFormat dateDayFormat = new SimpleDateFormat("E dd/MM/yyyy");
-        DateFormat timeFormat_24 = new SimpleDateFormat("HHmm");
-        DateFormat timeFormat_12 = new SimpleDateFormat("hh:mm a");
         String[] spiltWeekLabel = (currentWeek.getText()).split(" ");
-        Date startDate = dateFormat.parse(spiltWeekLabel[3]);
-        Date endDate = dateFormat.parse(spiltWeekLabel[5]);
+        String[] splitInput = input.split(" ");
+        int indices = splitInput.length;
+        if(input.startsWith("add/e")) {
+            Date inputDate = dateFormat.parse(splitInput[(indices-1)-4]);
+            Date startDate = dateFormat.parse(spiltWeekLabel[3]);
+            Date endDate = dateFormat.parse(spiltWeekLabel[5]);
 
-        if (input.startsWith("add/e")) {
-            String[] spiltInput = input.split(" /at ");
-            String[] modAndTask = (spiltInput[0].replaceFirst("add/e ", "")).split(" ");
-            String[] dateAndTime = spiltInput[1].split(" from ");
-            String date = dateAndTime[0].trim();
-            if(date.startsWith("Week")) date = LT.getDates(date.toLowerCase());
-            Date inputDate = dateFormat.parse(date);
-            Date currentDate = dateFormat.parse(dateFormat.format(new Date()));
-            if(inputDate.before(currentDate)) return;
-            String[] startAndEndTime = dateAndTime[1].split(" to ");
-
-            if (inputDate.after(startDate) && inputDate.before(endDate)) {
+            if(inputDate.after(startDate) && inputDate.before(endDate)){
                 String day = (dateDayFormat.format(inputDate)).substring(0,3);
-                Date startTime = timeFormat_24.parse(startAndEndTime[0]);
-                Date endTime = timeFormat_24.parse(startAndEndTime[1]);
-                Text toShow = new Text("Start: " + timeFormat_12.format(startTime) + "\nEnd: " +timeFormat_12.format(endTime) + "\n" + modAndTask[0] + "\n" + modAndTask[1]);
-                toShow.wrappingWidthProperty().bind(monEventView.widthProperty().subtract(15));
-                toShow.setFont(Font.font(10));
+
                 switch (day){
                     case "Mon":
-                        monList.add(toShow);
-                        monEventView.setItems(monList.sorted(MainWindow::compareByTime));
+                        monList.add((splitInput[2] + " " + splitInput[3]));
+                        monEventView.setItems(monList.sorted());
                         break;
                     case  "Tue":
-                        tueList.add(toShow);
-                        tueEventView.setItems(tueList.sorted(MainWindow::compareByTime));
+                        tueList.add((splitInput[2] + " " + splitInput[3]));
+                        tueEventView.setItems(tueList.sorted());
                         break;
                     case "Wed":
-                        wedList.add(toShow);
-                        wedEventView.setItems(wedList.sorted(MainWindow::compareByTime));
+                        wedList.add((splitInput[2] + " " + splitInput[3]));
+                        wedEventView.setItems(wedList.sorted());
                         break;
                     case "Thu":
-                        thuList.add(toShow);
-                        thuEventView.setItems(thuList.sorted(MainWindow::compareByTime));
+                        thuList.add((splitInput[2] + " " + splitInput[3]));
+                        thuEventView.setItems(thuList.sorted());
                         break;
                     case "Fri":
-                        friList.add(toShow);
-                        friEventView.setItems(friList.sorted(MainWindow::compareByTime));
+                        friList.add((splitInput[2] + " " + splitInput[3]));
+                        friEventView.setItems(friList.sorted());
                         break;
                     case "Sat":
-                        satList.add(toShow);
-                        satEventView.setItems(satList.sorted(MainWindow::compareByTime));
+                        satList.add((splitInput[2] + " " + splitInput[3]));
+                        satEventView.setItems(satList.sorted());
                         break;
                     case "Sun":
-                        sunList.add(toShow);
-                        sunEventView.setItems(sunList.sorted(MainWindow::compareByTime));
+                        sunList.add((splitInput[2] + " " + splitInput[3]));
+                        sunEventView.setItems(sunList.sorted());
                         break;
                 }
             }
-        } else if (input.startsWith("add/d")) {
+        } else if(input.startsWith("add/d")){
             deadlineTable.setItems(setDeadlineTable());
         }
     }
